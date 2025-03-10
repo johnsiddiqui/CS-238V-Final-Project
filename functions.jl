@@ -147,6 +147,60 @@ function find_max_imbalance(current_history)
     return max_imbalance, max_time, max_stack
 end
 
+# record max soc difference
+function evalsoc(soc_final)
+    mean_soc = mean(soc_final)
+    min_soc = minimum(soc_final)
+    max_soc = maximum(soc_final)
+    soc_imbalance = (max_soc - min_soc)
+    return soc_imbalance, mean_soc, min_soc, max_soc
+end
+
+# create soc heatmap
+function createheatmap(soc_final)
+    heatmap(1:size(soc_final,1), 1:size(soc_final,2), soc_final,
+        title = "Percent SOC at End of Simulation",
+        ylabel = "Parallel Cell Index",
+        xlabel = "Series Cell Index",
+        ylims = (0.5, p + 0.5),
+        xlims = (0.5, s + 0.5),
+        aspect_ratio = 1)
+end
+
+# create soc percent difference heatmap
+function createpercentdiffheatmap(soc_final)
+    soc_percentdiff = (soc_final.-mean(soc_final))/mean(soc_final)*100
+    heatmap(1:size(soc_final,1), 1:size(soc_final,2), soc_percentdiff,
+        title = "SOC Percent Difference at End of Simulation",
+        ylabel = "Parallel Cell Index",
+        xlabel = "Series Cell Index",
+        ylims = (0.5, p + 0.5),
+        xlims = (0.5, s + 0.5),
+        aspect_ratio = 1,
+        color = cgrad(["green", "yellow", "red"]))
+end
+
+struct BayesianEstimation
+    prior::Beta # from Distributions.jl
+    m # number of samples
+end
+
+function isfailure(τ,ψ)
+    if τ>ψ
+        return 1
+    else 
+        return 0
+    end
+end
+
+function estimate(alg::BayesianEstimation,data,ψ)
+    prior, m = alg.prior, alg.m
+    n,m = sum(isfailure(τ,ψ) for τ in data), length(data)
+    return Beta(prior.α + n, prior.β + m -n)
+end
+
+
+
 
 
 
